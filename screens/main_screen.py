@@ -1,20 +1,47 @@
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.uix.screenmanager import Screen
 from utils.machine_check import check_machine_status
+from kivy.uix.boxlayout import BoxLayout
 
 
 class MainScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout = GridLayout(cols=2, padding=10, spacing=10)
+        self.layout = BoxLayout(orientation="vertical", padding=10, spacing=10)
+        self.add_widget(self.layout)
         self.machines = {}
         self.current_selection = 0  # Індекс обраної кавомашини
 
+        # Верхня частина єкрану (поля для введеня координат)
+        self.top_layout = GridLayout(cols=2, padding=10)
+        self.layout.add_widget(self.top_layout)
+
+        # Ліва частина (широта)
+        self.lat_input_layout = BoxLayout(padding=10)
+        self.lat_input = TextInput(hint_text="Широта точки призначення", multiline=False)
+        self.lat_input_layout.add_widget(self.lat_input)
+
+        #Права частина (довгота)
+        self.lon_input_layout = BoxLayout(padding=10)
+        self.lon_input = TextInput(hint_text="Довгота точки призначення", multiline=False)
+        self.lon_input_layout.add_widget(self.lon_input)
+
+        self.top_layout.add_widget(self.lat_input_layout)
+        self.top_layout.add_widget(self.lon_input_layout)
+
+        # Кнопка для підтвердження введення
+        self.submit_button = Button(text="Обчислити напрямок")
+        # self.submit_button.bind(on_press=self.calculate_azimuth)
+
+        self.layout.add_widget(self.submit_button)
+
+
         # Додаємо 4 кавомашини
-        for i in range(1, 5):
+        for i in range(1, 3):
             machine_id = f"Machine {i}"
             button = Button(
                 text=machine_id,
@@ -31,7 +58,7 @@ class MainScreen(Screen):
             button.bind(on_release=lambda btn, mid=machine_id: self.activate_machine(mid))
             self.layout.add_widget(button)
 
-        self.add_widget(self.layout)
+        # self.add_widget(self.layout)
 
         # Оновлення статусу кожні 5 секунд
         self.update_machine_status()
@@ -82,7 +109,7 @@ class MainScreen(Screen):
     def on_key_down(self, window, key, scancode, codepoint, modifier):
         """
         Обробка натискання клавіш:
-        - Стрілка вліво/вправо: перемикає вибір між активними кавомашинами.
+        - Стрілка вверх/вниз: перемикає вибір між активними кавомашинами.
         - Enter: активує вибрану кавомашину.
         """
         if not self.manager or self.manager.current != "main_screen":
