@@ -17,7 +17,7 @@ class MainScreen(Screen):
         self.current_selection = 0  # Індекс обраної кавомашини
 
         # Верхня частина єкрану (поля для введеня координат)
-        self.top_layout = GridLayout(cols=2, padding=10)
+        self.top_layout = GridLayout(cols=2, padding=2, size_hint_y=0.25)
         self.layout.add_widget(self.top_layout)
 
         # Ліва частина (широта)
@@ -34,7 +34,7 @@ class MainScreen(Screen):
         self.top_layout.add_widget(self.lon_input_layout)
 
         # Кнопка для підтвердження введення
-        self.submit_button = Button(text="Обчислити напрямок")
+        self.submit_button = Button(text="Обчислити напрямок", size_hint_y=0.2)
         # self.submit_button.bind(on_press=self.calculate_azimuth)
 
         self.layout.add_widget(self.submit_button)
@@ -112,6 +112,8 @@ class MainScreen(Screen):
         - Стрілка вверх/вниз: перемикає вибір між активними кавомашинами.
         - Enter: активує вибрану кавомашину.
         """
+        if self.lon_input.focus or self.lat_input.focus:
+            return False
         if not self.manager or self.manager.current != "main_screen":
             return  # Дія відхиляється, якщо цей екран не активний
         active_machines = [id for id, m in self.machines.items() if m["status"]]
