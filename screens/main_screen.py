@@ -1,17 +1,20 @@
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
+from kivy.uix.label import Label
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.uix.screenmanager import Screen
 from utils.machine_check import check_machine_status
 from kivy.uix.boxlayout import BoxLayout
+from widgets.line_test import LineWidget
 
 
 class MainScreen(Screen):
+    initialized = True  # Чи були введені координати?
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout = BoxLayout(orientation="vertical", padding=10, spacing=10)
+        self.layout = BoxLayout(orientation="vertical", padding=10)
         self.add_widget(self.layout)
         self.machines = {}
         self.current_selection = 0  # Індекс обраної кавомашини
@@ -21,12 +24,12 @@ class MainScreen(Screen):
         self.layout.add_widget(self.top_layout)
 
         # Ліва частина (широта)
-        self.lat_input_layout = BoxLayout(padding=10)
+        self.lat_input_layout = BoxLayout(padding=1)
         self.lat_input = TextInput(hint_text="Широта точки призначення", multiline=False)
         self.lat_input_layout.add_widget(self.lat_input)
 
         #Права частина (довгота)
-        self.lon_input_layout = BoxLayout(padding=10)
+        self.lon_input_layout = BoxLayout(padding=1)
         self.lon_input = TextInput(hint_text="Довгота точки призначення", multiline=False)
         self.lon_input_layout.add_widget(self.lon_input)
 
@@ -36,8 +39,26 @@ class MainScreen(Screen):
         # Кнопка для підтвердження введення
         self.submit_button = Button(text="Обчислити напрямок", size_hint_y=0.2)
         # self.submit_button.bind(on_press=self.calculate_azimuth)
-
         self.layout.add_widget(self.submit_button)
+
+
+
+        # Дані по відстані
+        self.label_layout = BoxLayout(padding=1, size_hint_y=0.1)
+        self.layout.add_widget(self.label_layout)
+        if self.initialized:
+            self.label = Label(text="до цілі: ")
+            self.label_layout.add_widget(self.label)
+
+
+
+        # Додаємо віджет лінії
+        self.line_widget_layout = BoxLayout(orientation="vertical")
+        self.layout.add_widget(self.line_widget_layout)
+        self.line_widget = LineWidget(size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5})
+        self.line_widget_layout.add_widget(self.line_widget)
+
+
 
 
         # Додаємо 4 кавомашини
@@ -68,6 +89,9 @@ class MainScreen(Screen):
 
         # Виділяємо першу активну кавомашину
         self.update_selection()
+
+    def on_size(self, *args):
+        self.line_widget.on_size()
 
     def update_machine_status(self, *args):
         """
