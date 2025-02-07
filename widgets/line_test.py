@@ -51,14 +51,14 @@ class LineWidget(Widget):
 
             # Коло
             if 315 <= self.angle <= 360 or 0 <= self.angle <= 45:
-                relative_angle = (self.angle - 315) % 360
-                if relative_angle > 90:
-                    relative_angle = 90
-                elif relative_angle < 0:
-                    relative_angle = 0
+                relative_angle = 0
+                if self.angle >= 315:
+                    relative_angle = self.angle - 360
+                elif self.angle < 0:
+                    relative_angle = self.angle
 
                 displacement = self.pixels_per_degree * relative_angle
-                circle_x = self.line_x
+                circle_x = self.line_x + displacement
                 circle_y = self.line_y
 
                 Line(circle=(circle_x, circle_y, self.circle_size), width=1)
@@ -76,8 +76,7 @@ class LineWidget(Widget):
     def simulate_angle_change(self, dt):
         """Симуляція зміни кута від 360 (ліворуч) через 0 до 180 (праворуч)."""
         import math
-        raw_angle = 0 # (self.angle + 1) % 360
-
+        raw_angle = self.angle
         if raw_angle >= 0:
             self.angle = raw_angle
         else:
@@ -92,7 +91,7 @@ class LineApp(App):
     def simulate_angle_change(self, dt):
         """Симуляція зміни кута від 360 (ліворуч) через 0 до 180 (праворуч)."""
         import math
-        raw_angle = 0
+        raw_angle = 10
 
         if raw_angle >= 0:
             self.widget.angle = raw_angle

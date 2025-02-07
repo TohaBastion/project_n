@@ -8,10 +8,13 @@ from kivy.uix.screenmanager import Screen
 from utils.machine_check import check_machine_status
 from kivy.uix.boxlayout import BoxLayout
 from widgets.line_test import LineWidget
+from calculations.calculate_azimuth import calculate_azimuth
+from calculations.distance_destination import distance
 
 
 class MainScreen(Screen):
     initialized = True  # Чи були введені координати?
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout = BoxLayout(orientation="vertical", padding=10)
@@ -28,7 +31,7 @@ class MainScreen(Screen):
         self.lat_input = TextInput(hint_text="Широта точки призначення", multiline=False)
         self.lat_input_layout.add_widget(self.lat_input)
 
-        #Права частина (довгота)
+        # Права частина (довгота)
         self.lon_input_layout = BoxLayout(padding=1)
         self.lon_input = TextInput(hint_text="Довгота точки призначення", multiline=False)
         self.lon_input_layout.add_widget(self.lon_input)
@@ -38,28 +41,21 @@ class MainScreen(Screen):
 
         # Кнопка для підтвердження введення
         self.submit_button = Button(text="Обчислити напрямок", size_hint_y=0.2)
-        # self.submit_button.bind(on_press=self.calculate_azimuth)
+        self.submit_button.bind(on_press=self.submit_on_press)
         self.layout.add_widget(self.submit_button)
-
-
 
         # Дані по відстані
         self.label_layout = BoxLayout(padding=1, size_hint_y=0.1)
         self.layout.add_widget(self.label_layout)
         if self.initialized:
-            self.label = Label(text="до цілі: ")
+            self.label = Label(text="дані відсутні")
             self.label_layout.add_widget(self.label)
-
-
 
         # Додаємо віджет лінії
         self.line_widget_layout = BoxLayout(orientation="vertical")
         self.layout.add_widget(self.line_widget_layout)
         self.line_widget = LineWidget(size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5})
         self.line_widget_layout.add_widget(self.line_widget)
-
-
-
 
         # Додаємо 4 кавомашини
         for i in range(1, 3):
@@ -89,6 +85,16 @@ class MainScreen(Screen):
 
         # Виділяємо першу активну кавомашину
         self.update_selection()
+
+    def submit_on_press(self, *args):
+        try:
+            azimuth = calculate_azimuth(float(self.lat_input.text), float(self.lon_input.text))
+            self.line_widget.angle = azimuth
+            current_distance = distance(float(self.lat_input.text), float(self.lon_input.text))
+            self.label.text = (f"до цілі:  {current_distance}")
+
+        except:
+            self.label.text = ("Невірно введені данні!!!")
 
     def on_size(self, *args):
         self.line_widget.on_size()
