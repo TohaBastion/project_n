@@ -18,10 +18,10 @@ from utils.gps_utils import get_current_gps_data
 def distance(lat_2, lon_2):
     data_pos = get_current_gps_data()
     lat_1, lon_1 = data_pos["lat_1"], data_pos["lon_1"]
-    print(lat_1, lon_1)
+    # print(lat_1, lon_1)
     geod = Geodesic.WGS84  # Модель Землі
     result = geod.Inverse(lat_1, lon_1, lat_2, lon_2)
-    print(result)
+    # print(result)
 
     return f"{result['s12'] / 1000:.3f} км"  # Відстань у км
 
