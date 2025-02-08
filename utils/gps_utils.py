@@ -1,17 +1,15 @@
 import time
-
 import serial
-import schedule
 
-
-rawcoordinates = serial.Serial('COM6', baudrate=115200)
 
 def get_current_gps_data():
+    lat_1 = None
+    lon_1 = None
+    current_azimuth = None
 
     while True:
-
         try:
-
+            rawcoordinates = serial.Serial('COM6', baudrate=115200)
             ser_bytes = rawcoordinates.readline()
             decoded_bytes = ser_bytes.decode('utf-8')
             dataset = decoded_bytes.split(",")
@@ -47,24 +45,24 @@ def get_current_gps_data():
                 longti_mmm = round(longti_mmm, 8)
                 longtitude = longtitude_degrees + longti_mmm
 
-                # print("Longtitude",(longtitude), "Latitude",(latitude))
-                time.sleep(0.1)
-            return current_azimuth
+                print("Longtitude", (longtitude), "Latitude", (latitude))
+                lat_1 = latitude
+                lon_1 = longtitude
+            break
 
-
-
-
+            # time.sleep(0.1)
 
         except serial.SerialException:
             print("No GPS receiver connected.")
-            time.sleep(0.1)
+            break
 
-        # return {"lat_1": latitude, "lon_1": longtitude, "current_azimuth": current_azimuth}
+    print(lat_1, lon_1, current_azimuth)
+    return {"lat_1": lat_1, "lon_1": lon_1, "current_atimuth": current_azimuth}
 
+    # return {"lat_1": latitude, "lon_1": longtitude, "current_azimuth": current_azimuth}
 
 
 get_current_gps_data()
-
 
 # import random
 # import math

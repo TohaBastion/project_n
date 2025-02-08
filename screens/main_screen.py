@@ -92,9 +92,10 @@ class MainScreen(Screen):
             self.line_widget.angle = azimuth
             current_distance = distance(float(self.lat_input.text), float(self.lon_input.text))
             self.label.text = (f"до цілі:  {current_distance}")
+            Clock.schedule_once(self.submit_on_press(), 1) # TODO: Перевірити
 
         except:
-            self.label.text = ("Невірно введені данні!!!")
+            self.label.text = ("Невірні данні!!!")
 
     def on_size(self, *args):
         self.line_widget.on_size()
