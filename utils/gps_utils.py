@@ -6,10 +6,11 @@ def get_current_gps_data():
     lat_1 = None
     lon_1 = None
     current_azimuth = None
+    rawcoordinates = serial.Serial('COM3', baudrate=115200)
 
     while True:
         try:
-            rawcoordinates = serial.Serial('COM6', baudrate=115200)
+
             ser_bytes = rawcoordinates.readline()
             decoded_bytes = ser_bytes.decode('utf-8')
             dataset = decoded_bytes.split(",")
@@ -62,7 +63,7 @@ def get_current_gps_data():
     # return {"lat_1": latitude, "lon_1": longtitude, "current_azimuth": current_azimuth}
 
 
-get_current_gps_data()
+# get_current_gps_data()
 
 # import random
 # import math
