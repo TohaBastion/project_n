@@ -1,3 +1,4 @@
+import threading
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
@@ -8,7 +9,7 @@ from kivy.uix.screenmanager import Screen
 from utils.machine_check import check_machine_status
 from kivy.uix.boxlayout import BoxLayout
 from widgets.line_test import LineWidget
-from calculations.calculate_azimuth import calculate_azimuth
+from utils.gps_utils import get_current_gps_data
 from calculations.distance_destination import distance
 
 
@@ -43,6 +44,7 @@ class MainScreen(Screen):
         self.submit_button = Button(text="Обчислити напрямок", size_hint_y=0.2)
         self.submit_button.bind(on_press=self.submit_on_press)
         self.layout.add_widget(self.submit_button)
+
 
         # Дані по відстані
         self.label_layout = BoxLayout(padding=1, size_hint_y=0.1)
@@ -87,15 +89,18 @@ class MainScreen(Screen):
         self.update_selection()
 
     def submit_on_press(self, *args):
-        try:
-            azimuth = calculate_azimuth(float(self.lat_input.text), float(self.lon_input.text))
-            self.line_widget.angle = azimuth
-            current_distance = distance(float(self.lat_input.text), float(self.lon_input.text))
-            self.label.text = (f"до цілі:  {current_distance}")
-            Clock.schedule_once(self.submit_on_press(), 1) # TODO: Перевірити
+        threading.Thread(target=self.get_gps_data_thread).start()
 
-        except:
-            self.label.text = ("Невірні данні!!!")
+    def get_gps_data_thread(self, *args):
+        azimuth = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text))
+        if azimuth is not None:
+            # Оновлюємо кут в основному потоці
+            Clock.schedule_once(lambda dt: self.update_azimuth(azimuth), 0.1)
+
+    def update_azimuth(self, azimuth):
+        self.line_widget.angle = azimuth
+        # Повторно плануємо виклик функції для отримання даних через 1 секунду
+        Clock.schedule_once(lambda dt: self.submit_on_press(), 0.1)
 
     def on_size(self, *args):
         self.line_widget.on_size()

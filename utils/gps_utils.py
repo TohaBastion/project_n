@@ -1,64 +1,61 @@
 import time
 import serial
+from calculations.calculate_azimuth import calculate_azimuth
 
 
-def get_current_gps_data():
+import serial
+
+def get_current_gps_data(lat_2, lon_2, *args):
+    rawcoordinates = serial.Serial('COM7', baudrate=115200)
+
     lat_1 = None
     lon_1 = None
     current_azimuth = None
-    rawcoordinates = serial.Serial('COM3', baudrate=115200)
 
     while True:
         try:
-
             ser_bytes = rawcoordinates.readline()
-            decoded_bytes = ser_bytes.decode('utf-8')
+            decoded_bytes = ser_bytes.decode('utf-8').strip()
             dataset = decoded_bytes.split(",")
             print(dataset)
-            if dataset[0] == '$GNHDT':
-                current_azimuth = float(dataset[1])
-                # print(current_azimuth)
 
-            elif dataset[0] == '$GNRMC':
-                # Convert latitude data to decimal coordinates
-                lati_nmea = dataset[3]
-                lati_nmea = lati_nmea
-                lati_degrees = lati_nmea[:2]
+            if dataset[0] == '$GNHDT' and len(dataset) > 1:
+                try:
+                    current_azimuth = float(dataset[1])
+                except ValueError:
+                    continue  # Пропускаємо рядки з помилками
 
-                if dataset[4] == 'S':
-                    latitude_degrees = int(lati_degrees) * -1
-                else:
-                    latitude_degrees = int(lati_degrees)
-                lati_ddd = lati_nmea[2:10]
-                lati_mmm = float(lati_ddd) / 60
-                lati_mmm = round(lati_mmm, 8)
-                latitude = latitude_degrees + lati_mmm
+            elif dataset[0] == '$GNRMC' and len(dataset) > 6:
+                try:
+                    lati_nmea = dataset[3]
+                    lati_degrees = int(lati_nmea[:2])
+                    lati_mmm = round(float(lati_nmea[2:]) / 60, 8)
+                    latitude = lati_degrees + lati_mmm if dataset[4] == 'N' else -(lati_degrees + lati_mmm)
 
-                # Convert longtitude data to decimal coordinates
-                longti_nmea = dataset[5]
-                longti_degrees = longti_nmea[:3]
-                if dataset[6] == 'W':
-                    longtitude_degrees = int(longti_degrees) * -1
-                else:
-                    longtitude_degrees = int(longti_degrees)
-                longti_ddd = longti_nmea[3:10]
-                longti_mmm = float(longti_ddd) / 60
-                longti_mmm = round(longti_mmm, 8)
-                longtitude = longtitude_degrees + longti_mmm
+                    longti_nmea = dataset[5]
+                    longti_degrees = int(longti_nmea[:3])
+                    longti_mmm = round(float(longti_nmea[3:]) / 60, 8)
+                    longtitude = longti_degrees + longti_mmm if dataset[6] == 'E' else -(longti_degrees + longti_mmm)
 
-                print("Longtitude", (longtitude), "Latitude", (latitude))
-                lat_1 = latitude
-                lon_1 = longtitude
-            break
+                    lat_1, lon_1 = latitude, longtitude
+                except ValueError:
+                    continue  # Пропускаємо рядки з помилками
 
-            # time.sleep(0.1)
+            if lat_1 is not None and lon_1 is not None and current_azimuth is not None:
+                relative_bearing = calculate_azimuth(lat_1, lon_1, lat_2, lon_2, current_azimuth)
+                print(lat_1, lon_1)
+                return relative_bearing
+
+                # print(lat_1, lon_1, current_azimuth)
+                # return {"lat_1": lat_1, "lon_1": lon_1, "current_azimuth": current_azimuth}
 
         except serial.SerialException:
             print("No GPS receiver connected.")
-            break
 
-    print(lat_1, lon_1, current_azimuth)
-    return {"lat_1": lat_1, "lon_1": lon_1, "current_atimuth": current_azimuth}
+
+    #
+    # print(lat_1, lon_1, current_azimuth)
+    # return {"lat_1": lat_1, "lon_1": lon_1, "current_atimuth": current_azimuth}
 
     # return {"lat_1": latitude, "lon_1": longtitude, "current_azimuth": current_azimuth}
 

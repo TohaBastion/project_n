@@ -54,7 +54,7 @@ class LineWidget(Widget):
                 relative_angle = 0
                 if self.angle >= 315:
                     relative_angle = self.angle - 360
-                elif self.angle < 0:
+                elif self.angle > 0:
                     relative_angle = self.angle
 
                 displacement = self.pixels_per_degree * relative_angle
@@ -91,7 +91,7 @@ class LineApp(App):
     def simulate_angle_change(self, dt):
         """Симуляція зміни кута від 360 (ліворуч) через 0 до 180 (праворуч)."""
         import math
-        raw_angle = 10
+        raw_angle = (self.widget.angle + 1) % 360
 
         if raw_angle >= 0:
             self.widget.angle = raw_angle
