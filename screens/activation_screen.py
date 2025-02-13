@@ -6,6 +6,7 @@ from kivy.core.window import Window
 from utils.check_signal import check_signal_1_status, check_signal_2_status
 from kivy.uix.boxlayout import BoxLayout
 from widgets.vector import ArrowWidget
+from widgets.line_test import LineWidget
 
 
 class ActivationScreen(Screen):
@@ -29,10 +30,14 @@ class ActivationScreen(Screen):
         self.left_status_layout.add_widget(self.indicator2)
 
         # Права частина: новий віджет
-        self.right_widget = ArrowWidget(50.4501, 30.5234, 49.8397, 24.0297, 45,
-                                        size_hint=(1, 1))  # Ваша логіка налаштування
+        self.line_widget_layout = BoxLayout(orientation="vertical")
+        self.top_layout.add_widget(self.line_widget_layout)
+        self.line_widget = LineWidget(size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5})
+        self.line_widget_layout.add_widget(self.line_widget)
+        # self.right_widget = ArrowWidget(50.4501, 30.5234, 49.8397, 24.0297, 45,
+        #                                 size_hint=(1, 1))  # Ваша логіка налаштування
         self.top_layout.add_widget(self.left_status_layout)
-        self.top_layout.add_widget(self.right_widget)
+        # self.top_layout.add_widget(self.right_widget)
 
         # Нижня частина: кнопки
         self.bottom_layout = BoxLayout(orientation="vertical", spacing=10)

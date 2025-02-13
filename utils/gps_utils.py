@@ -1,12 +1,9 @@
-import time
-import serial
 from calculations.calculate_azimuth import calculate_azimuth
-
 
 import serial
 
 def get_current_gps_data(lat_2, lon_2, *args):
-    rawcoordinates = serial.Serial('COM7', baudrate=115200)
+
 
     lat_1 = None
     lon_1 = None
@@ -14,6 +11,7 @@ def get_current_gps_data(lat_2, lon_2, *args):
 
     while True:
         try:
+            rawcoordinates = serial.Serial('COM7', baudrate=115200)
             ser_bytes = rawcoordinates.readline()
             decoded_bytes = ser_bytes.decode('utf-8').strip()
             dataset = decoded_bytes.split(",")

@@ -95,12 +95,12 @@ class MainScreen(Screen):
         azimuth = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text))
         if azimuth is not None:
             # Оновлюємо кут в основному потоці
-            Clock.schedule_once(lambda dt: self.update_azimuth(azimuth), 0.1)
+            Clock.schedule_once(lambda dt: self.update_azimuth(azimuth), 0.05)
 
     def update_azimuth(self, azimuth):
         self.line_widget.angle = azimuth
         # Повторно плануємо виклик функції для отримання даних через 1 секунду
-        Clock.schedule_once(lambda dt: self.submit_on_press(), 0.1)
+        Clock.schedule_once(lambda dt: self.submit_on_press(), 0.05)
 
     def on_size(self, *args):
         self.line_widget.on_size()
