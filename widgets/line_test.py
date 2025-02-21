@@ -24,7 +24,7 @@ class LineWidget(Widget):
         self.line_x = self.center_x
         self.pixels_per_degree = self.right / 90
         self.square_size = self.pixels_per_degree * 2.5
-        self.circle_size = self.square_size // 4
+        self.circle_size = self.square_size // 2
         self.update_visuals()
 
     def on_angle(self, instance, value):
@@ -47,10 +47,11 @@ class LineWidget(Widget):
             square_x = self.center_x + square_offset - self.square_size / 2
             square_y = self.line_y - self.square_size / 2
 
-            Line(rectangle=(square_x, square_y, self.square_size, self.square_size), width=1)
+            Line(rectangle=(square_x, square_y, self.square_size, self.square_size), width=2)
 
             # Коло
             if 315 <= self.angle <= 360 or 0 <= self.angle <= 45:
+                Color(1,0, 0, 1)
                 relative_angle = 0
                 if self.angle >= 315:
                     relative_angle = self.angle - 360
@@ -61,7 +62,7 @@ class LineWidget(Widget):
                 circle_x = self.line_x + displacement
                 circle_y = self.line_y
 
-                Line(circle=(circle_x, circle_y, self.circle_size), width=1)
+                Line(circle=(circle_x, circle_y, self.circle_size), width=2)
 
 
             # Стрілки

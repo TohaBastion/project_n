@@ -59,7 +59,9 @@ class MainScreen(Screen):
         self.line_widget = LineWidget(size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5})
         self.line_widget_layout.add_widget(self.line_widget)
 
-        # Додаємо 4 кавомашини
+        # Додаємо 2 кавомашини
+        self.machines_layout = GridLayout(cols=2, padding=2, size_hint_y=0.25)
+        self.layout.add_widget(self.machines_layout)
         for i in range(1, 3):
             machine_id = f"Machine {i}"
             button = Button(
@@ -75,12 +77,17 @@ class MainScreen(Screen):
                 "button": button,
             }
             button.bind(on_release=lambda btn, mid=machine_id: self.activate_machine(mid))
-            self.layout.add_widget(button)
+            self.machines_layout.add_widget(button)
 
         # self.add_widget(self.layout)
 
         # Оновлення статусу кожні 5 секунд
         self.update_machine_status()
+
+        # Кнопка виходу
+        self.exit_button = Button(text="Exit", size_hint_y=0.2)
+        self.exit_button.bind(on_press=self.exit_app)
+        self.layout.add_widget(self.exit_button)
 
         # Підключення обробки клавіш
         Window.bind(on_key_down=self.on_key_down)
@@ -202,3 +209,9 @@ class MainScreen(Screen):
         print(f"Кавомашина {machine_id} активована!")
         self.manager.current = "activation_screen"
         self.manager.get_screen("activation_screen").setup(machine_id)
+
+
+    def exit_app(selfself):
+        # if self.submit_on_press
+        from main import ASD
+        ASD.get_running_app().stop()
