@@ -24,7 +24,7 @@ class MainScreen(Screen):
         self.current_selection = 0  # Індекс обраної кавомашини
 
         # Верхня частина єкрану (поля для введеня координат)
-        self.top_layout = GridLayout(cols=2, padding=2, size_hint_y=0.25)
+        self.top_layout = GridLayout(cols=2, padding=2, size_hint_y=0.2)
         self.layout.add_widget(self.top_layout)
 
         # Ліва частина (широта)

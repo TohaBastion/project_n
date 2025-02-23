@@ -2,6 +2,11 @@
 Основний файл застосунку, що ініціалізує  сам застосунок та ододає вікна через
 менеджера вікон.
 """
+from kivy.core.window import Window
+
+Window.fullscreen = 'auto'
+
+
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager
 from screens.main_screen import MainScreen

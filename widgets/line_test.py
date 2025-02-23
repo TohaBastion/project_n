@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.graphics import Line, Color, Triangle
+from kivy.graphics import Line, Color, Triangle, Rectangle
 from kivy.properties import NumericProperty
 from kivy.clock import Clock
 
@@ -35,14 +35,19 @@ class LineWidget(Widget):
         """Оновлення графічних елементів."""
         self.canvas.clear()
         with self.canvas:
-            # Масштабування
+            Color(0.3, 0.4, 1, 1)
+            Rectangle(pos=(self.x, self.y + self.height / 2), size=(self.width, self.height / 2))
+
+            Color(0.7, 0.5, 0.3, 1)
+            Rectangle(pos=self.pos, size=(self.width, self.height/2))
 
             # Лінія
-            Color(0, 1., 0, 0.5)
+            Color(1, 1, 1, 0.8)
             Line(points=[self.x, self.line_y, self.right, self.line_y], width=1)
             Line(points=[self.line_x, self.line_y - self.square_size, self.line_x, self.line_y + self.square_size], width=1)
 
             # Квадрат
+            Color(0, 0.75, 0, 1)
             square_offset = self.pixels_per_degree * 0
             square_x = self.center_x + square_offset - self.square_size / 2
             square_y = self.line_y - self.square_size / 2
