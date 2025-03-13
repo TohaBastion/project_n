@@ -1,5 +1,4 @@
 import threading
-import serial
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
@@ -18,7 +17,7 @@ class MainScreen(Screen):
     initialized = True  # Чи були введені координати?
     gps_thread = None
     gps_thread_stop = None
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         try:
@@ -107,12 +106,18 @@ class MainScreen(Screen):
         self.gps_thread = threading.Thread(target=self.get_gps_data_thread)
         self.gps_thread.start()
         return self.gps_thread, self.gps_thread_stop
-    
+
     def get_gps_data_thread(self, *args):
-        azimuth = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text), self.rawcoordinates, self.gps_thread_stop)
-        if azimuth is not None:
-            # Оновлюємо кут в основному потоці
-            Clock.schedule_once(lambda dt: self.update_azimuth(azimuth))
+        if self.lat_input.text.strip() and self.lon_input.text.strip():
+            azimuth, distance = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text),
+                                                     self.gps_thread_stop)
+            if azimuth:
+                # Оновлюємо кут в основному потоці
+                self.line_widget.color_circle = (1, 0, 0, 1)
+                Clock.schedule_once(lambda dt: self.update_azimuth(azimuth))
+                self.label.text = distance
+        else:
+            self.label.text = "Щось пішло не так"
 
     def update_azimuth(self, azimuth):
         self.line_widget.angle = azimuth

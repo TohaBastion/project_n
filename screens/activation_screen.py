@@ -32,8 +32,7 @@ class ActivationScreen(Screen):
         # Права частина: новий віджет
         self.line_widget_layout = BoxLayout(orientation="vertical")
         self.top_layout.add_widget(self.line_widget_layout)
-        self.line_widget = LineWidget(size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5})
-        self.line_widget_layout.add_widget(self.line_widget)
+        self.line_widget = None
         # self.right_widget = ArrowWidget(50.4501, 30.5234, 49.8397, 24.0297, 45,
         #                                 size_hint=(1, 1))  # Ваша логіка налаштування
         self.top_layout.add_widget(self.left_status_layout)
@@ -71,11 +70,12 @@ class ActivationScreen(Screen):
         self.buttons = (self.start_button, self.back_button)
         Window.bind(on_key_down=self.on_key_down)
 
-    def setup(self, machine_id):
+    def setup(self, machine_id, line_widget):
         """
         Викликається під час переходу до екрану.
         Скидає стан індикаторів та оновлює логіку для вибраної кавомашини.
         """
+        self.line_widget = line_widget
         self.machine_id = machine_id
         self.indicator1.text = "Signal 1: 0"
         self.indicator1.color = [1, 0, 0, 1]  # Червоний текст
@@ -83,6 +83,12 @@ class ActivationScreen(Screen):
         self.indicator2.color = [1, 0, 0, 1]
         self.start_button.disabled = True
         self.start_button.background_color = [0.5, 0.5, 0.5, 1]  # Сірий фон
+
+        # Якщо віджет було передано, додаємо його до макету
+        if line_widget.parent:
+            # Якщо є, видаляємо з попереднього контейнера
+            line_widget.parent.remove_widget(line_widget)
+        self.line_widget_layout.add_widget(self.line_widget)
 
         # Скидаємо вибір
         self.current_selection = None

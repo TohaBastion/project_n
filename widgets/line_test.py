@@ -10,6 +10,7 @@ class LineWidget(Widget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.color_circle = (1, 1, 1, 1)
         self.line_y = self.center_y
         self.line_x = self.center_x
         self.pixels_per_degree = 0
@@ -56,7 +57,7 @@ class LineWidget(Widget):
 
             # Коло
             if 315 <= self.angle <= 360 or 0 <= self.angle <= 45:
-                Color(1,0, 0, 1)
+                Color(*self.color_circle)
                 relative_angle = 0
                 if self.angle >= 315:
                     relative_angle = self.angle - 360
