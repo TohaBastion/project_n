@@ -1,4 +1,5 @@
 import threading
+import serial
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
@@ -15,9 +16,15 @@ from calculations.distance_destination import distance
 
 class MainScreen(Screen):
     initialized = True  # Чи були введені координати?
-
+    gps_thread = None
+    gps_thread_stop = None
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        try:
+            self.rawcoordinates = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=0)
+        except:
+            print('error USB port')
         self.layout = BoxLayout(orientation="vertical", padding=10)
         self.add_widget(self.layout)
         self.machines = {}
@@ -96,18 +103,21 @@ class MainScreen(Screen):
         self.update_selection()
 
     def submit_on_press(self, *args):
-        threading.Thread(target=self.get_gps_data_thread).start()
-
+        self.gps_thread_stop = threading.Event()
+        self.gps_thread = threading.Thread(target=self.get_gps_data_thread)
+        self.gps_thread.start()
+        return self.gps_thread, self.gps_thread_stop
+    
     def get_gps_data_thread(self, *args):
-        azimuth = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text))
+        azimuth = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text), self.rawcoordinates, self.gps_thread_stop)
         if azimuth is not None:
             # Оновлюємо кут в основному потоці
-            Clock.schedule_once(lambda dt: self.update_azimuth(azimuth), 0.05)
+            Clock.schedule_once(lambda dt: self.update_azimuth(azimuth))
 
     def update_azimuth(self, azimuth):
         self.line_widget.angle = azimuth
         # Повторно плануємо виклик функції для отримання даних через 1 секунду
-        Clock.schedule_once(lambda dt: self.submit_on_press(), 0.05)
+        Clock.schedule_once(lambda dt: self.submit_on_press())
 
     def on_size(self, *args):
         self.line_widget.on_size()
@@ -211,7 +221,8 @@ class MainScreen(Screen):
         self.manager.get_screen("activation_screen").setup(machine_id)
 
 
-    def exit_app(selfself):
-        # if self.submit_on_press
+    def exit_app(self, *args):
+        self.gps_thread_stop.set()
+        self.gps_thread.join()
         from main import ASD
         ASD.get_running_app().stop()

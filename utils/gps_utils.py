@@ -1,48 +1,62 @@
 from calculations.calculate_azimuth import calculate_azimuth
-
+import time
 import serial
 
-def get_current_gps_data(lat_2, lon_2, *args):
+def get_current_gps_data(lat_2, lon_2, rawcoordinates, event, *args):
 
 
     lat_1 = None
     lon_1 = None
     current_azimuth = None
+    print(event.is_set())
+    
 
     while True:
+        if event.is_set() == True:
+            print('stop event is set')
+            break
         try:
-            rawcoordinates = serial.Serial('COM7', baudrate=115200)
-            ser_bytes = rawcoordinates.readline()
+            time.sleep(0.1)
+            ser_bytes = rawcoordinates.read(rawcoordinates.in_waiting or 1)
             decoded_bytes = ser_bytes.decode('utf-8').strip()
-            dataset = decoded_bytes.split(",")
-            print(dataset)
+            dataset = decoded_bytes.split('\n')
+            for line in dataset:
+                split_line = line.split(',')
+                print(split_line)
+                if split_line[0] == '$GNHDT':
+                    try:
+                        current_azimuth = float(split_line[1])
+                    except ValueError:
+                        continue
+            # print(dataset)
 
-            if dataset[0] == '$GNHDT' and len(dataset) > 1:
-                try:
-                    current_azimuth = float(dataset[1])
-                except ValueError:
-                    continue  # Пропускаємо рядки з помилками
+            #if dataset[0] == '$GNHDT' and len(dataset) > 1:
+                #try:
+                    #current_azimuth = float(dataset[1])
+                #except ValueError:
+                    #continue  # Пропускаємо рядки з помилками
 
-            elif dataset[0] == '$GNRMC' and len(dataset) > 6:
-                try:
-                    lati_nmea = dataset[3]
-                    lati_degrees = int(lati_nmea[:2])
-                    lati_mmm = round(float(lati_nmea[2:]) / 60, 8)
-                    latitude = lati_degrees + lati_mmm if dataset[4] == 'N' else -(lati_degrees + lati_mmm)
+                if split_line[0] == '$GNRMC' and len(split_line) > 6:
+                    try:
+                        lati_nmea = split_line[3]
+                        lati_degrees = int(lati_nmea[:2])
+                        lati_mmm = round(float(lati_nmea[2:]) / 60, 8)
+                        latitude = lati_degrees + lati_mmm if split_line[4] == 'N' else -(lati_degrees + lati_mmm)
+#
+                        longti_nmea = split_line[5]
+                        longti_degrees = int(longti_nmea[:3])
+                        longti_mmm = round(float(longti_nmea[3:]) / 60, 8)
+                        longtitude = longti_degrees + longti_mmm if split_line[6] == 'E' else -(longti_degrees + longti_mmm)
 
-                    longti_nmea = dataset[5]
-                    longti_degrees = int(longti_nmea[:3])
-                    longti_mmm = round(float(longti_nmea[3:]) / 60, 8)
-                    longtitude = longti_degrees + longti_mmm if dataset[6] == 'E' else -(longti_degrees + longti_mmm)
+                        lat_1, lon_1 = latitude, longtitude
+                    except ValueError:
+                        continue  # Пропускаємо рядки з помилками
 
-                    lat_1, lon_1 = latitude, longtitude
-                except ValueError:
-                    continue  # Пропускаємо рядки з помилками
-
-            if lat_1 is not None and lon_1 is not None and current_azimuth is not None:
-                relative_bearing = calculate_azimuth(lat_1, lon_1, lat_2, lon_2, current_azimuth)
-                print(lat_1, lon_1)
-                return relative_bearing
+                if lat_1 is not None and lon_1 is not None and current_azimuth is not None:
+                    relative_bearing = calculate_azimuth(lat_1, lon_1, lat_2, lon_2, current_azimuth)
+                    print(lat_1, lon_1)
+                    rawcoordinates.reset_input_buffer()
+                    return relative_bearing
 
                 # print(lat_1, lon_1, current_azimuth)
                 # return {"lat_1": lat_1, "lon_1": lon_1, "current_azimuth": current_azimuth}
