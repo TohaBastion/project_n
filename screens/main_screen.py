@@ -11,6 +11,7 @@ from kivy.uix.boxlayout import BoxLayout
 from widgets.line_test import LineWidget
 from utils.gps_utils import get_current_gps_data
 from calculations.distance_destination import distance
+# from utils.diode_line import update_leds
 
 
 class MainScreen(Screen):
@@ -109,8 +110,7 @@ class MainScreen(Screen):
 
     def get_gps_data_thread(self, *args):
         if self.lat_input.text.strip() and self.lon_input.text.strip():
-            azimuth, distance = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text),
-                                                     self.gps_thread_stop)
+            azimuth, distance = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text), self.gps_thread_stop)
             if azimuth:
                 # Оновлюємо кут в основному потоці
                 self.line_widget.color_circle = (1, 0, 0, 1)
@@ -121,6 +121,7 @@ class MainScreen(Screen):
 
     def update_azimuth(self, azimuth):
         self.line_widget.angle = azimuth
+        # update_leds(azimuth)
         # Повторно плануємо виклик функції для отримання даних через 1 секунду
         Clock.schedule_once(lambda dt: self.submit_on_press())
 
