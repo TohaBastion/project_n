@@ -1,6 +1,7 @@
-from calculations.calculate_azimuth import calculate_azimuth
 import time
 import serial
+from calculations.calculate_azimuth import calculate_azimuth
+from calculations.distance_destination import distance
 
 def get_current_gps_data(lat_2, lon_2, rawcoordinates, event, *args):
 
@@ -54,9 +55,11 @@ def get_current_gps_data(lat_2, lon_2, rawcoordinates, event, *args):
 
                 if lat_1 is not None and lon_1 is not None and current_azimuth is not None:
                     relative_bearing = calculate_azimuth(lat_1, lon_1, lat_2, lon_2, current_azimuth)
+                    relative_distance = distance(lat_1, lon_1, lat_2, lon_2)
                     print(lat_1, lon_1)
                     rawcoordinates.reset_input_buffer()
-                    return relative_bearing
+                    return relative_bearing, relative_distance
+                    
 
                 # print(lat_1, lon_1, current_azimuth)
                 # return {"lat_1": lat_1, "lon_1": lon_1, "current_azimuth": current_azimuth}
@@ -64,7 +67,8 @@ def get_current_gps_data(lat_2, lon_2, rawcoordinates, event, *args):
         except serial.SerialException:
             print("No GPS receiver connected.")
 
-
+def get_current_gps_data1():
+    return 30, "30"
     #
     # print(lat_1, lon_1, current_azimuth)
     # return {"lat_1": lat_1, "lon_1": lon_1, "current_atimuth": current_azimuth}

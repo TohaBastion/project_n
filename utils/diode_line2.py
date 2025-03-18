@@ -15,8 +15,8 @@ strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRI
 strip.begin()
 
 # 🔹 Налаштування
-#STEP_ANGLE = 3      # Крок зміни кута (3°)
-#DELAY_TIME = 0.2    # Затримка оновлення (секунди)
+STEP_ANGLE = 3      # Крок зміни кута (3°)
+DELAY_TIME = 0.2    # Затримка оновлення (секунди)
 
 # 🔹 Початковий кут
 angle = 0.0
@@ -56,4 +56,20 @@ def update_leds(theta):
 
     strip.show()  # Оновлення стрічки
 
+# 🔹 Основний цикл
+try:
+    while True:
+        update_leds(angle)  # Оновлення діодів
+
+        angle += STEP_ANGLE  # Змінюємо кут
+        if angle > 360:
+            angle = 0  # Повертаємо на 0° після 360°
+
+        time.sleep(DELAY_TIME)  # Затримка
+
+except KeyboardInterrupt:
+    print("\nГасимо діоди та завершуємо програму")
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, 0)  # Встановлюємо чорний (вимкнено)
+    strip.show()  # Гасимо всі діоди перед оновленням
 

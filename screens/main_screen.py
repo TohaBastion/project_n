@@ -1,4 +1,5 @@
 import threading
+import serial
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
@@ -10,25 +11,31 @@ from utils.machine_check import check_machine_status
 from kivy.uix.boxlayout import BoxLayout
 from widgets.line_test import LineWidget
 from utils.gps_utils import get_current_gps_data
+#from utils.gps_utils import get_current_gps_data1
 from calculations.distance_destination import distance
-# from utils.diode_line import update_leds
+from utils.PWM_control import pwm_calculate
+from utils.matrix_keyboard import get_key
+
+from utils.diode_line import update_leds
 
 
 class MainScreen(Screen):
-    initialized = True  # Чи були введені координати?
+    initialized = False  # Чи були введені координати?
     gps_thread = None
     gps_thread_stop = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.label = Label(text="дані відсутні")
         try:
             self.rawcoordinates = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=0)
         except:
             print('error USB port')
+            self.label.text = "Помилка підключення антени"
         self.layout = BoxLayout(orientation="vertical", padding=10)
         self.add_widget(self.layout)
         self.machines = {}
-        self.current_selection = 0  # Індекс обраної кавомашини
+        #self.current_selection = 0  # Індекс обраної кавомашини
 
         # Верхня частина єкрану (поля для введеня координат)
         self.top_layout = GridLayout(cols=2, padding=2, size_hint_y=0.2)
@@ -46,6 +53,9 @@ class MainScreen(Screen):
 
         self.top_layout.add_widget(self.lat_input_layout)
         self.top_layout.add_widget(self.lon_input_layout)
+        
+        self.current_input = self.lat_input
+        Clock.schedule_interval(self.read_keypad, 0.05)
 
         # Кнопка для підтвердження введення
         self.submit_button = Button(text="Обчислити напрямок", size_hint_y=0.2)
@@ -56,9 +66,7 @@ class MainScreen(Screen):
         # Дані по відстані
         self.label_layout = BoxLayout(padding=1, size_hint_y=0.1)
         self.layout.add_widget(self.label_layout)
-        if self.initialized:
-            self.label = Label(text="дані відсутні")
-            self.label_layout.add_widget(self.label)
+        self.label_layout.add_widget(self.label)
 
         # Додаємо віджет лінії
         self.line_widget_layout = BoxLayout(orientation="vertical")
@@ -67,7 +75,7 @@ class MainScreen(Screen):
         self.line_widget_layout.add_widget(self.line_widget)
 
         # Додаємо 2 кавомашини
-        self.machines_layout = GridLayout(cols=2, padding=2, size_hint_y=0.25)
+        self.machines_layout = GridLayout(cols=2, padding=2, spacing=2, size_hint_y=0.25)
         self.layout.add_widget(self.machines_layout)
         for i in range(1, 3):
             machine_id = f"Machine {i}"
@@ -97,11 +105,34 @@ class MainScreen(Screen):
         self.layout.add_widget(self.exit_button)
 
         # Підключення обробки клавіш
-        Window.bind(on_key_down=self.on_key_down)
+        #Window.bind(on_key_down=self.on_key_down)
 
         # Виділяємо першу активну кавомашину
-        self.update_selection()
-
+        #self.update_selection()
+        
+    def read_keypad(self, dt):
+        key = get_key()
+        if key:
+            if key == "A":   # Переключення між полями
+                self.current_input = self.lat_input
+            elif key == "B":   # Переключення між полями
+                self.current_input = self.lon_input
+            elif key == "*":  # Очищення введення
+                self.current_input.text = ""
+            elif key == "C":
+                self.current_input.text += "."
+            elif key == "#":
+                try:
+                    print("натиснуто #")
+                    self.submit_on_press()
+                except:
+                    print("не вдалося запустити обчислення")
+            elif key in ["D"]:  # Можливе використання для додаткових функцій
+                print(f"Натиснуто спец. клавішу: {key}")
+            else:
+                self.current_input.text += key  # Введення цифр
+                
+                
     def submit_on_press(self, *args):
         self.gps_thread_stop = threading.Event()
         self.gps_thread = threading.Thread(target=self.get_gps_data_thread)
@@ -110,18 +141,24 @@ class MainScreen(Screen):
 
     def get_gps_data_thread(self, *args):
         if self.lat_input.text.strip() and self.lon_input.text.strip():
-            azimuth, distance = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text), self.gps_thread_stop)
-            if azimuth:
-                # Оновлюємо кут в основному потоці
-                self.line_widget.color_circle = (1, 0, 0, 1)
-                Clock.schedule_once(lambda dt: self.update_azimuth(azimuth))
-                self.label.text = distance
+            self.initialized = True
+            try:
+                azimuth, distance = get_current_gps_data(float(self.lat_input.text), float(self.lon_input.text), self.rawcoordinates, self.gps_thread_stop)
+                #azimuth, distance = get_current_gps_data1()
+                if azimuth:
+                    # Оновлюємо кут в основному потоці
+                    self.line_widget.color_circle = (1, 0, 0, 1)
+                    Clock.schedule_once(lambda dt: self.update_azimuth(azimuth))
+                    self.label.text = distance
+            except:
+                self.label.text = "Перевірте підключення"
         else:
-            self.label.text = "Щось пішло не так"
+            self.label.text = "Некоректно введені дані!"
 
     def update_azimuth(self, azimuth):
         self.line_widget.angle = azimuth
-        # update_leds(azimuth)
+        pwm_calculate(azimuth)
+        update_leds(azimuth)
         # Повторно плануємо виклик функції для отримання даних через 1 секунду
         Clock.schedule_once(lambda dt: self.submit_on_press())
 
@@ -137,94 +174,99 @@ class MainScreen(Screen):
             machine["status"] = status
             button = machine["button"]
 
-            if status:
+            if status == "active":
                 # Активна кнопка: чорний текст, білий фон
                 button.color = [0, 0, 0, 1]
                 button.background_color = [1, 1, 1, 1]
                 button.disabled = False
-            else:
+            elif status == "select":
+                # Обрана кнопка: білий текст, зелений фон
+                button.color = [1, 1, 1, 1]
+                button.background_color = [0, 1, 0, 1]
+                button.disabled = False
+            elif status == "inactive":
                 # Неактивна кнопка: сірий текст, світло-сірий фон
                 button.color = [0.5, 0.5, 0.5, 1]
                 button.background_color = [0.9, 0.9, 0.9, 1]
                 button.disabled = True
 
         # Перевіряємо, чи обрана кнопка активна
-        self.ensure_active_selection()
+        # self.ensure_active_selection()
 
         # Оновлюємо статус через 5 секунд
         Clock.schedule_once(self.update_machine_status, 5)
 
-    def ensure_active_selection(self):
+    #def ensure_active_selection(self):
         """
         Якщо поточно обрана кавомашина неактивна, перемикає вибір на першу активну.
         """
-        active_machines = [id for id, m in self.machines.items() if m["status"]]
-        if active_machines:
-            selected_id = list(self.machines.keys())[self.current_selection]
-            if selected_id not in active_machines:
-                self.current_selection = list(self.machines.keys()).index(active_machines[0])
-        self.update_selection()
+        #active_machines = [id for id, m in self.machines.items() if m["status"]]
+        #if active_machines:
+            #selected_id = list(self.machines.keys())[self.current_selection]
+            #if selected_id not in active_machines:
+                #self.current_selection = list(self.machines.keys()).index(active_machines[0])
+        #self.update_selection()
 
-    def on_key_down(self, window, key, scancode, codepoint, modifier):
+    #def on_key_down(self, window, key, scancode, codepoint, modifier):
         """
         Обробка натискання клавіш:
         - Стрілка вверх/вниз: перемикає вибір між активними кавомашинами.
         - Enter: активує вибрану кавомашину.
         """
-        if self.lon_input.focus or self.lat_input.focus:
-            return False
-        if not self.manager or self.manager.current != "main_screen":
-            return  # Дія відхиляється, якщо цей екран не активний
-        active_machines = [id for id, m in self.machines.items() if m["status"]]
-        if not active_machines:
-            return  # Немає активних машин
+        #if self.lon_input.focus or self.lat_input.focus:
+            #return False
+        #if not self.manager or self.manager.current != "main_screen":
+            #return  # Дія відхиляється, якщо цей екран не активний
+        #active_machines = [id for id, m in self.machines.items() if m["status"]]
+        #if not active_machines:
+            #return  # Немає активних машин
 
-        if key == 273:  # Стрілка вгору
-            self.current_selection = self.get_next_selection(-1, active_machines)
-            self.update_selection()
-        elif key == 274:  # Стрілка вниз
-            self.current_selection = self.get_next_selection(1, active_machines)
-            self.update_selection()
-        elif key == 13:  # Enter
-            selected_id = list(self.machines.keys())[self.current_selection]
-            if selected_id in active_machines:
-                self.activate_machine(selected_id)
-        return True
+        #if key == 273:  # Стрілка вгору
+         #   self.current_selection = self.get_next_selection(-1, active_machines)
+          #  self.update_selection()
+        #elif key == 274:  # Стрілка вниз
+         #   self.current_selection = self.get_next_selection(1, active_machines)
+          #  self.update_selection()
+        #elif key == 13:  # Enter
+         #   selected_id = list(self.machines.keys())[self.current_selection]
+          #  if selected_id in active_machines:
+           #     self.activate_machine(selected_id)
+        #return True
 
-    def get_next_selection(self, direction, active_machines):
+    #def get_next_selection(self, direction, active_machines):
         """
         Отримує індекс наступної активної кавомашини в заданому напрямку.
         """
-        current_id = list(self.machines.keys())[self.current_selection]
-        current_index = active_machines.index(current_id) if current_id in active_machines else 0
+     #   current_id = list(self.machines.keys())[self.current_selection]
+      #  current_index = active_machines.index(current_id) if current_id in active_machines else 0
 
         # Обчислюємо наступний індекс
-        next_index = (current_index + direction) % len(active_machines)
+       # next_index = (current_index + direction) % len(active_machines)
 
         # Отримуємо глобальний індекс
-        return list(self.machines.keys()).index(active_machines[next_index])
+        #return list(self.machines.keys()).index(active_machines[next_index])
 
-    def update_selection(self):
+    #def update_selection(self):
         """
         Підсвічує обрану кавомашину.
         """
-        for i, (machine_id, machine) in enumerate(self.machines.items()):
-            button = machine["button"]
-            if machine["status"]:
-                if i == self.current_selection:
+     #   for i, (machine_id, machine) in enumerate(self.machines.items()):
+      #      button = machine["button"]
+       #     if machine["status"]:
+        #        if i == self.current_selection:
                     # Підсвічуємо обрану кнопку
-                    button.background_color = [0.5, 0.8, 1, 1]  # Блакитний фон
-                else:
+         #           button.background_color = [0.5, 0.8, 1, 1]  # Блакитний фон
+          #      else:
                     # Звичайна активна кнопка
-                    button.background_color = [1, 1, 1, 1]  # Білий фон
+           #         button.background_color = [1, 1, 1, 1]  # Білий фон
 
-    def activate_machine(self, machine_id):
+    #def activate_machine(self, machine_id):
         """
         Логіка активації кавомашини.
         """
-        print(f"Кавомашина {machine_id} активована!")
-        self.manager.current = "activation_screen"
-        self.manager.get_screen("activation_screen").setup(machine_id)
+     #   print(f"Кавомашина {machine_id} активована!")
+      #  self.manager.current = "activation_screen"
+       # self.manager.get_screen("activation_screen").setup(machine_id)
 
 
     def exit_app(self, *args):
