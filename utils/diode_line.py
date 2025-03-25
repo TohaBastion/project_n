@@ -55,5 +55,11 @@ def update_leds(theta):
             strip.setPixelColor(i, Color(255, 0, 0))  # 8-й по 1-й
 
     strip.show()  # Оновлення стрічки
+    
+def stop_leds():
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, 0)  # Встановлюємо чорний (вимкнено)
+    strip.show()
+    
 
 

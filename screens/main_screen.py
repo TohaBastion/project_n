@@ -16,7 +16,7 @@ from calculations.distance_destination import distance
 from utils.PWM_control import pwm_calculate
 from utils.matrix_keyboard import get_key
 
-from utils.diode_line import update_leds
+from utils.diode_line import update_leds, stop_leds
 
 
 class MainScreen(Screen):
@@ -189,12 +189,16 @@ class MainScreen(Screen):
                 button.color = [0.5, 0.5, 0.5, 1]
                 button.background_color = [0.9, 0.9, 0.9, 1]
                 button.disabled = True
+            elif status == "fixed":
+                button.color = [1, 1, 1, 1]
+                button.background_color = [1, 0, 0, 1]
+                button.disabled = False
 
         # Перевіряємо, чи обрана кнопка активна
         # self.ensure_active_selection()
 
         # Оновлюємо статус через 5 секунд
-        Clock.schedule_once(self.update_machine_status, 5)
+        Clock.schedule_once(self.update_machine_status, 1)
 
     #def ensure_active_selection(self):
         """
@@ -270,7 +274,9 @@ class MainScreen(Screen):
 
 
     def exit_app(self, *args):
+        stop_leds()
         self.gps_thread_stop.set()
         self.gps_thread.join()
+        
         from main import ASD
         ASD.get_running_app().stop()

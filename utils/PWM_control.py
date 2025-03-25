@@ -3,7 +3,7 @@ import time
 
 # Налаштування GPIO
 GPIO.setmode(GPIO.BCM)
-PWM_PIN = 17  # Вибери потрібний пін
+PWM_PIN = 5  # Вибери потрібний пін
 GPIO.setup(PWM_PIN, GPIO.OUT)
 
 # Запускаємо ШІМ із частотою 1000 Гц
