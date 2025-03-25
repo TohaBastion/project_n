@@ -23,8 +23,12 @@ machines = {
 
 # Налаштовуємо GPIO як вхідні з pull-up резисторами
 for pins in machines.values():
-    for pin in pins:
+    # Перший датчик підтягуємо до PULL_UP
+    GPIO.setup(pins[0], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # Інші два залишаються з PULL_DOWN
+    for pin in pins[1:]:
         GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
 
 def check_machine_status(machine_id):
     """Отримує ID кавомашини та повертає її стан залежно від датчиків."""
@@ -37,7 +41,7 @@ def check_machine_status(machine_id):
     sensor_states = [GPIO.input(pin) for pin in sensor_pins]
 
     # Логіка визначення стану кавомашини
-    if sensor_states[0] == GPIO.LOW:
+    if sensor_states[0] == GPIO.HIGH:
         return "inactive"
     elif sensor_states[1] == GPIO.LOW:
         return "active"
